@@ -55,14 +55,13 @@ class tsie(nn.Module):
         i_temporal_embeddings = []
         j_temporal_embeddings = []
         for t in range(self.time_steps):
-            x_i = data_list_i[t][2][0].srcdata['feats']  # [二跳邻居个数, input_dim]
-            x_j = data_list_j[t][2][0].srcdata['feats']  # [二跳邻居个数, input_dim]
-            sage_o_i = self.Sage(data_list_i[t][2], x_i)  # [该batch的i节点数, hidden_dim]
+            x_i = data_list_i[t][2][0].srcdata['feats']
+            x_j = data_list_j[t][2][0].srcdata['feats'] 
+            sage_o_i = self.Sage(data_list_i[t][2], x_i) 
             sage_o_j = self.Sage(data_list_j[t][2], x_j)
             sage_o_i = F.normalize(sage_o_i, p=2, dim=1)
             sage_o_j = F.normalize(sage_o_j, p=2, dim=1)
-            _, idx_i = torch.unique(data_list_i[t][1],
-                                    return_inverse=True)  # idx_i[batch_size]  data_list_i[t][1].shape [该batch的i节点数]
+            _, idx_i = torch.unique(data_list_i[t][1], return_inverse=True)
             _, idx_j = torch.unique(data_list_j[t][1], return_inverse=True)
 
             i_temporal_embeddings.append(sage_o_i[idx_i])
@@ -88,24 +87,22 @@ class tsie(nn.Module):
             u_v_diff = u_v_diff[:i + 1, :, :]
             v_u_diff = v_u_diff[:i + 1, :, :]
 
-            # 互演化窗口限定
             if i >= self.rnn_wnd:
                 v_u_diff = v_u_diff[(i + 1 - self.rnn_wnd):i + 1, :, :]
                 u_v_diff = u_v_diff[(i + 1 - self.rnn_wnd):i + 1, :, :]
 
-            for rnn in self.gru1:  # 交互
-                v_u = rnn(v_u_diff)[-1]  # 取最后一步   [bs, hiddendim]
+            for rnn in self.gru1: 
+                v_u = rnn(v_u_diff)[-1]  # [bs, hiddendim]
                 u_v = rnn(u_v_diff)[-1]
 
             u_his = u_temporal_embeddings[:i + 1, :, :]
             v_his = v_temporal_embeddings[:i + 1, :, :]
 
-            # 自演化窗口限定
             if i >= self.rnn_wnd:
                 u_his = u_his[(i + 1 - self.rnn_wnd):i + 1, :, :]
                 v_his = v_his[(i + 1 - self.rnn_wnd):i + 1, :, :]
 
-            for rnn in self.gru2:  # 自身历史
+            for rnn in self.gru2:
                 u_his = rnn(u_his)[-1]
                 v_his = rnn(v_his)[-1]
 
